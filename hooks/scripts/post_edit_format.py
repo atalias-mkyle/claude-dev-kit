@@ -49,6 +49,8 @@ FORMATTERS = {
 def main() -> int:
     if os.environ.get("DEVKIT_DISABLE_AUTOFORMAT") == "1":
         return 0
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "false":
+        return 0
 
     try:
         payload = json.load(sys.stdin)

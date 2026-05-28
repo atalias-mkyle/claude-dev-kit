@@ -1,19 +1,22 @@
 {
-  "name": "dev-kit-marketplace",
+  "name": "Atalias Claude Marketplace",
   "owner": {
-    "name": "Your Name"
+    "name": "Atalias Tech"
   },
   "metadata": {
     "description": "Personal Claude Code dev-kit marketplace",
     "version": "1.0.0"
   },
+  "allowCrossMarketplaceDependenciesOn": ["openviking-plugins"],
   "plugins": [
     {
       "name": "dev-kit",
+      "version": "2.0.0",
       "source": "./",
-      "description": "Opinionated Claude Code workflow kit with Context7, Serena, subagents, hooks, and project bootstrapper.",
+      "description": "Complete Claude agentic dev-kit: 11 specialized subagents, 8 skills, 4 commands, 6 hook scripts, and 6 MCP integrations for the full software development lifecycle.",
       "category": "workflow",
-      "tags": ["mcp", "subagents", "hooks", "context7", "serena"]
+      "tags": ["mcp", "subagents", "hooks", "context7", "serena"],
+      "installCount": 0
     }
   ]
 }

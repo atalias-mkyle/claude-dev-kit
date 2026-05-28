@@ -11,6 +11,10 @@ import os
 import subprocess
 import sys
 
+if sys.version_info < (3, 10):
+    print("## Dev Kit Warning\nPython 3.10+ is required for the session context hook.\nDetected:", sys.version, "\nSet DEVKIT_DISABLE_SESSION_CONTEXT=1 to suppress.")
+    sys.exit(0)
+
 
 MAX_RECENT_COMMITS = 5
 MAX_TODOS = 8
@@ -33,8 +37,31 @@ def run(cmd: list[str], cwd: str | None = None) -> str:
         return ""
 
 
+def read_recent_decisions(cwd: str) -> list[str]:
+    decisions_path = os.path.join(cwd, ".claude", "memory", "decisions.md")
+    try:
+        with open(decisions_path, encoding="utf-8") as f:
+            content = f.read().strip()
+        if not content:
+            return []
+        entries = content.split("### ")
+        entries = [e for e in entries if e.strip()]
+        last_three = entries[-3:]
+        result = []
+        for entry in last_three:
+            text = ("### " + entry).strip()
+            if len(text) > 300:
+                text = text[:297] + "..."
+            result.append(text)
+        return result
+    except (FileNotFoundError, OSError):
+        return []
+
+
 def main() -> int:
     if os.environ.get("DEVKIT_DISABLE_SESSION_CONTEXT") == "1":
+        return 0
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "false":
         return 0
 
     project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
@@ -74,6 +101,21 @@ def main() -> int:
         if len(dirty.splitlines()) > MAX_DIRTY_FILES:
             lines.append(f"  - ...and {len(dirty.splitlines()) - MAX_DIRTY_FILES} more")
 
+    # In-progress workflow state
+    workflow_state_path = os.path.join(project_dir, ".claude", "workflow-state.json")
+    try:
+        if os.path.isfile(workflow_state_path):
+            import json
+            with open(workflow_state_path, encoding="utf-8") as wf:
+                ws = json.load(wf)
+            stage = ws.get("stage", "")
+            if stage and stage != "complete":
+                steps_done = len(ws.get("steps_completed", []))
+                steps_total = len(ws.get("step_index", []))
+                lines.append(f"- In-progress workflow: stage={stage}, {steps_done}/{steps_total} steps complete")
+    except Exception:
+        pass
+
     recent = run(
         ["git", "log", "-n", str(MAX_RECENT_COMMITS), "--pretty=format:%h %s"],
         cwd=project_dir,
@@ -108,6 +150,35 @@ def main() -> int:
             if len(t) > 160:
                 t = t[:157] + "..."
             lines.append(f"  - {t}")
+
+    # Inject recent decisions
+    if decisions := read_recent_decisions(project_dir):
+        lines.append("\n## Recent Decisions (last 3)")
+        lines.extend(decisions)
+
+    # CLAUDE.md staleness signal
+    try:
+        claude_md = os.path.join(project_dir, "CLAUDE.md")
+        if os.path.isfile(claude_md):
+            age = run(["git", "log", "-1", "--format=%cr", "--", "CLAUDE.md"], cwd=project_dir)
+            last_hash = run(["git", "log", "-1", "--format=%H", "--", "CLAUDE.md"], cwd=project_dir)
+            if age and last_hash:
+                commit_count_str = run(
+                    ["git", "rev-list", "--count", f"{last_hash}..HEAD"],
+                    cwd=project_dir,
+                )
+                commit_count = int(commit_count_str) if commit_count_str.isdigit() else 0
+                age_lower = age.lower()
+                is_old = (
+                    "year" in age_lower
+                    or ("month" in age_lower and int(age_lower.split()[0]) >= 2)
+                )
+                if is_old and commit_count > 10:
+                    lines.append(
+                        f"- CLAUDE.md last updated {age} — consider /refresh to check for stale content."
+                    )
+    except Exception:
+        pass
 
     print("\n".join(lines))
     return 0

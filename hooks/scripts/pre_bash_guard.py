@@ -22,9 +22,8 @@ DANGEROUS_PATTERNS = [
     (r"\bsudo\s+rm\b", "sudo rm"),
     # Wide-open permissions
     (r"\bchmod\s+(-R\s+)?777\b", "chmod 777"),
-    # Force-push to main/master/release branches
-    (r"\bgit\s+push\s+.*--force(?:-with-lease)?\b.*\b(main|master|release|prod|production)\b", "force-push to protected branch"),
-    (r"\bgit\s+push\s+.*\b(main|master|release|prod|production)\b.*--force(?:-with-lease)?\b", "force-push to protected branch"),
+    # Force-push in any form (bare -f or --force/--force-with-lease, any branch)
+    (r"\bgit\s+push\b.*?\s(-f|--force(?:-with-lease)?)(?:\s|$)", "force-push"),
     # Reset --hard on protected branches
     (r"\bgit\s+reset\s+--hard\b.*\b(origin/main|origin/master|origin/release|origin/prod)\b", "hard reset of protected branch"),
     # Pipe-to-shell installs from the network
@@ -37,12 +36,16 @@ DANGEROUS_PATTERNS = [
     (r":\(\)\s*\{\s*:\|:&\s*\};:", "fork bomb"),
     # rm of obviously critical paths
     (r"\brm\s+(-[a-zA-Z]*\s+)*/(\s|$|\*)", "rm targeting filesystem root"),
-    (r"\brm\s+(-[a-zA-Z]*\s+)*~(\s|$|/\*\s*$)", "rm targeting entire home dir"),
+    (r"\brm\s+(?:-[a-zA-Z]*\s+)*~/", "rm targeting entire home dir"),
 ]
 
 
 def main() -> int:
+    # argv[1] is the install-time userConfig value ("true"/"false").
+    # The env var is a per-session override that always wins.
     if os.environ.get("DEVKIT_DISABLE_BASH_GUARD") == "1":
+        return 0
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "false":
         return 0
 
     try:

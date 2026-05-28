@@ -3,7 +3,7 @@
     "context7": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
+      "args": ["-y", "@upstash/context7-mcp@3.0.0"],
       "env": {
         "CONTEXT7_API_KEY": "${user_config.context7_api_key}"
       }
@@ -13,7 +13,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/oraios/serena",
+        "git+https://github.com/oraios/serena@v1.5.3",
         "serena",
         "start-mcp-server",
         "--context",
@@ -25,7 +25,23 @@
     "sequential-thinking": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
+    },
+    "brave-search": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${user_config.brave_api_key}"
+      }
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "env": {
+        "MEMORY_FILE_PATH": "${user_config.memory_path}"
+      }
     }
   }
 }
