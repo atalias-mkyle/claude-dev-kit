@@ -10,16 +10,10 @@
     },
     "serena": {
       "type": "stdio",
-      "command": "uvx",
+      "command": "sh",
       "args": [
-        "--from",
-        "git+https://github.com/oraios/serena@v1.5.3",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "${CLAUDE_PROJECT_DIR}"
+        "-c",
+        "uvx --from git+https://github.com/oraios/serena@v1.5.3 serena start-mcp-server --context ide-assistant --project \"$CLAUDE_PROJECT_DIR\""
       ]
     },
     "sequential-thinking": {
