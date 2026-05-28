@@ -1,0 +1,36 @@
+{
+  "name": "dev-kit",
+  "version": "1.0.0",
+  "description": "Opinionated Claude Code workflow kit: Context7 + Serena MCPs, planning/research/review subagents, three baseline hooks, and a project bootstrapper. Cross-machine consistent.",
+  "author": {
+    "name": "Your Name"
+  },
+  "license": "MIT",
+  "keywords": ["workflow", "context7", "serena", "subagents", "hooks", "dev-kit"],
+  "userConfig": {
+    "context7_api_key": {
+      "type": "string",
+      "title": "Context7 API key",
+      "description": "Get a free key at https://context7.com/dashboard for higher rate limits. Leave blank to use the free tier.",
+      "sensitive": true
+    },
+    "enable_autoformat": {
+      "type": "boolean",
+      "title": "Auto-format files after edits",
+      "description": "Run prettier/black/gofmt/rustfmt after Claude writes or edits a file (if installed).",
+      "default": true
+    },
+    "enable_bash_guard": {
+      "type": "boolean",
+      "title": "Block destructive bash commands",
+      "description": "Block rm -rf, force-pushes to protected branches, chmod 777, and similar.",
+      "default": true
+    },
+    "enable_session_context": {
+      "type": "boolean",
+      "title": "Inject project context on session start",
+      "description": "On SessionStart, inject git branch, recent commits, uncommitted changes, and open TODOs.",
+      "default": true
+    }
+  }
+}

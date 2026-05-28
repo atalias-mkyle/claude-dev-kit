@@ -1,0 +1,19 @@
+{
+  "name": "dev-kit-marketplace",
+  "owner": {
+    "name": "Your Name"
+  },
+  "metadata": {
+    "description": "Personal Claude Code dev-kit marketplace",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "dev-kit",
+      "source": "./",
+      "description": "Opinionated Claude Code workflow kit with Context7, Serena, subagents, hooks, and project bootstrapper.",
+      "category": "workflow",
+      "tags": ["mcp", "subagents", "hooks", "context7", "serena"]
+    }
+  ]
+}
