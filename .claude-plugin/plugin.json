@@ -7,9 +7,6 @@
   },
   "license": "MIT",
   "keywords": ["workflow", "context7", "serena", "subagents", "hooks", "dev-kit", "openviking"],
-  "dependencies": [
-    { "name": "openviking-memory", "marketplace": "openviking-plugins" }
-  ],
   "userConfig": {
     "context7_api_key": {
       "type": "string",
