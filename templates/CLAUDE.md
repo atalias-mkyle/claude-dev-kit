@@ -19,6 +19,7 @@
 - Tests live in: `<path>`
 - Shared utilities: `<path>`
 - Architectural decisions: see `.claude/memory/decisions.md`
+- Serena project memories: see `.serena/memories/` (use `mcp__serena__list_memories` / `mcp__serena__read_memory`)
 
 ## Working agreements
 - Plan before implementing for any change touching more than one file (use the `planner` subagent).

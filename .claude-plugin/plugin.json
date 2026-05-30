@@ -1,7 +1,7 @@
 {
   "name": "dev-kit",
   "version": "2.0.0",
-  "description": "Complete Claude agentic dev-kit: 11 specialized subagents, 8 skills, 4 commands, 6 hook scripts, and 6 MCP integrations for the full software development lifecycle.",
+  "description": "Complete Claude agentic dev-kit: 11 specialized subagents, 8 skills, 4 commands, 9 hook scripts, and 6 MCP integrations for the full software development lifecycle.",
   "author": {
     "name": "Atalias Tech"
   },
@@ -35,7 +35,8 @@
     "openviking_base_url": {
       "type": "string",
       "title": "OpenViking server URL",
-      "description": "Base URL of your OpenViking server, e.g. https://openviking.example.com. Leave blank to skip memory setup."
+      "description": "Base URL of your OpenViking server. Defaults to http://127.0.0.1:1933 (standard local port). Override for a remote server.",
+      "default": "http://127.0.0.1:1933"
     },
     "openviking_api_key": {
       "type": "string",
@@ -54,6 +55,12 @@
       "title": "Local memory store path",
       "description": "Path for the local knowledge graph memory store. Defaults to ~/.claude/dev-kit-memory.",
       "default": "~/.claude/dev-kit-memory"
+    },
+    "memory_system": {
+      "type": "string",
+      "title": "Active memory system",
+      "description": "Which memory system Claude should use to store and recall context. Options: openviking (recommended — auto-recall on every prompt), local-graph (mcp-knowledge-graph, lightweight JSONL store), decisions-md (no MCP, append to .claude/memory/decisions.md only).",
+      "default": "openviking"
     }
   }
 }

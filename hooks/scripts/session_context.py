@@ -180,6 +180,22 @@ def main() -> int:
     except Exception:
         pass
 
+    # Tooling nudges
+    if os.environ.get("DEVKIT_DISABLE_NUDGES") != "1":
+        lines.append("\n## Dev-kit tooling")
+        lines.append("- Non-trivial task? → `orchestrator` agent, or `planner` → `reverse-reasoner` → `implementer`")
+        lines.append("- Library API question? → Context7 MCP (not training data)")
+        lines.append("- Before pushing? → `/pr-check`; auth/API/secrets changes → `/security-check`")
+        lines.append("- Code files: use Serena, not Read/Grep. Sequence: `get_symbols_overview` → `find_symbol(include_body=True)` → `replace_symbol_body` (or `replace_content` for small in-body edits). Always read the body before replacing it or decorators will be silently dropped.")
+
+        memory_system = (os.environ.get("MEMORY_SYSTEM") or "openviking").lower().strip()
+        if memory_system == "openviking":
+            lines.append("- Memory: OpenViking — `mcp__openviking__store` to save, `mcp__openviking__search` to recall, `mcp__openviking__forget` to delete")
+        elif memory_system == "local-graph":
+            lines.append("- Memory: local knowledge graph — use `mcp__memory__add_observations` / `mcp__memory__search_nodes`")
+        elif memory_system == "decisions-md":
+            lines.append("- Memory: decisions.md — append decisions to `.claude/memory/decisions.md`")
+
     print("\n".join(lines))
     return 0
 

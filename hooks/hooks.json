@@ -34,19 +34,45 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/openviking_recall.py",
+            "env": {
+              "OPENVIKING_BASE_URL": "${user_config.openviking_base_url}",
+              "OPENVIKING_API_KEY": "${user_config.openviking_api_key}"
+            },
+            "timeout": 8
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/setup_openviking.py ${user_config.openviking_base_url}",
+            "env": { "OPENVIKING_API_KEY": "${user_config.openviking_api_key}" },
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session_context.py ${user_config.enable_session_context}",
+            "env": { "MEMORY_SYSTEM": "${user_config.memory_system}" },
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/setup_openviking.py ${user_config.openviking_base_url}",
-            "env": { "OPENVIKING_API_KEY": "${user_config.openviking_api_key}" },
-            "timeout": 5
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/openviking_session_start.py",
+            "env": {
+              "OPENVIKING_BASE_URL": "${user_config.openviking_base_url}",
+              "OPENVIKING_API_KEY": "${user_config.openviking_api_key}"
+            },
+            "timeout": 10
           }
         ]
       }
@@ -58,6 +84,15 @@
             "type": "command",
             "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session_capture.py",
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/openviking_capture.py",
+            "env": {
+              "OPENVIKING_BASE_URL": "${user_config.openviking_base_url}",
+              "OPENVIKING_API_KEY": "${user_config.openviking_api_key}"
+            },
+            "timeout": 30
           }
         ]
       }

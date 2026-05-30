@@ -4,7 +4,7 @@ An opinionated, cross-machine Claude Code setup that you install once and get ev
 
 It bundles:
 
-- **MCPs:** Context7 (live library docs), Serena (LSP-powered code retrieval), Sequential Thinking (structured reasoning), plus optional Brave Search and local memory graph
+- **MCPs:** OpenViking (persistent memory, auto-recall on every prompt), Context7 (live library docs), Serena (LSP-powered code retrieval), Sequential Thinking (structured reasoning), plus optional Brave Search and local memory graph
 - **Subagents:** `orchestrator`, `researcher`, `planner`, `reverse-reasoner`, `implementer`, `reviewer`, `security-reviewer`, `test-runner`, `debugger`, `ci-triager`, `memory-curator` — each in its own context window
 - **Hooks:** bash guard, write guard, auto-format on edit, project-snapshot on session start, session capture on stop
 - **Skills:** `project-bootstrap`, `debug-playbook`, `pr-checklist`, `security-review`, `dependency-audit`, `incident-response`, `deploy-check`, `onboard`
@@ -39,7 +39,7 @@ From inside Claude Code (any project, anywhere):
 /plugin install dev-kit@dev-kit-marketplace
 ```
 
-You'll be prompted for the userConfig values (Context7 API key — optional, leave blank for free tier; the three boolean toggles).
+You'll be prompted for the userConfig values (Context7 API key — optional, leave blank for free tier; OpenViking URL and API key; the boolean toggles).
 
 That's it. On the next session start in any project, the hooks fire, the MCPs come up, and the subagents are available.
 
@@ -57,30 +57,29 @@ It drops a `CLAUDE.md` and `.claude/memory/decisions.md` tailored to whatever st
 
 ## Cross-machine memory (the "what did I do here vs there" piece)
 
-The kit deliberately leaves persistent cross-session memory to a separate plugin so you can pick the flavor you want. Three options, ranked by setup cost:
+The kit ships three memory layers, active by default:
 
-### Option A — synced CLAUDE.md + decisions.md (zero infra)
+### Layer 1 — OpenViking (semantic memory, built-in)
 
-Put your projects on a synced drive (iCloud, Dropbox, Syncthing, OneDrive). The `CLAUDE.md` and `.claude/memory/decisions.md` files travel with the project. This is the simplest "what I decided here vs there" path and the one you should start with.
+[OpenViking](https://github.com/volcengine/OpenViking) is ByteDance's open-source context database for AI agents. The kit wires it directly — no separate plugin needed.
 
-The `session_capture.py` Stop hook automatically appends a session summary to `decisions.md` at the end of every session — no manual effort required.
+**What the kit does automatically:**
+- **SessionStart** — fetches your recent memories and preferences from OpenViking and injects them as `<openviking-context>` so Claude starts every session with persistent context.
+- **UserPromptSubmit** — searches OpenViking for memories relevant to each prompt and injects them as `<relevant-memories>` before Claude responds.
+- **Stop** — sends the conversation transcript to OpenViking for memory extraction and indexing.
+- **MCP** — `openviking` MCP server registered at `http://127.0.0.1:1933` by default, exposing `mcp__openviking__search`, `mcp__openviking__store`, `mcp__openviking__read`, `mcp__openviking__forget`, and others.
 
-### Option B — OpenViking auto-recall (recommended for full memory)
+**Setup:** Start an OpenViking server locally (`docker run -p 1933:1933 volcengine/openviking`) or point `openviking_base_url` at a remote one. Set `openviking_api_key` if your server requires auth. The kit writes `~/.openviking/ovcli.conf` on first session start.
 
-[OpenViking](https://github.com/volcengine/OpenViking) is ByteDance's open-source context database for AI agents. Its Claude Code plugin auto-captures memories at session end and auto-recalls relevant ones when you submit a prompt.
+For cross-machine sharing, point OpenViking's data dir at a synced folder (`~/Dropbox/openviking`).
 
-The kit includes two complementary pieces: `plugin.json` lists it as a dependency so it gets installed automatically, and `hooks/scripts/setup_openviking.py` writes the config file on first run. The `plugin.json` dependency installs the plugin; `setup_openviking.py` writes the server config to `~/.openviking/`. These are complementary, not redundant — you need both for a fully wired setup.
+### Layer 2 — decisions.md (zero infra)
 
-```bash
-/plugin marketplace add Castor6/openviking-plugins
-/plugin install claude-code-memory-plugin@openviking-plugin
-```
+The `session_capture.py` Stop hook appends a timestamped git snapshot to `.claude/memory/decisions.md` at the end of every session. Syncs naturally if the project is on a synced drive.
 
-For cross-machine sharing, point OpenViking's data dir at a synced folder. On each machine, edit `~/.openviking/ov.conf` so the storage path is something like `~/Dropbox/openviking`.
+### Layer 3 — local knowledge graph (optional)
 
-### Option C — local knowledge graph (lightweight)
-
-If OpenViking feels heavy, use [`mcp-knowledge-graph`](https://github.com/shaneholloman/mcp-knowledge-graph), which stores memory as JSONL. The kit includes an optional `memory` MCP entry in `.mcp.json` — set `memory_path` in userConfig to point it at a synced folder.
+If you prefer a local JSONL graph over OpenViking, set `memory_path` in userConfig and use the `mcp__memory__*` tools. Set `memory_system: local-graph` to have the session-start nudge point Claude at the right tools.
 
 ---
 
@@ -98,9 +97,12 @@ claude-dev-kit/
 │       ├── pre_bash_guard.py    # blocks rm -rf, force-push to main, etc.
 │       ├── pre_write_guard.py   # blocks writes to .env, .ssh/, /etc/, and sensitive paths
 │       ├── post_edit_format.py  # auto-formats by extension; silent if formatter missing
-│       ├── session_context.py   # injects git state + recent decisions + workflow progress
-│       ├── session_capture.py   # appends session summary to decisions.md on stop
-│       └── setup_openviking.py  # writes OpenViking config idempotently on session start
+│       ├── session_context.py        # injects git state + recent decisions + tooling nudges
+│       ├── session_capture.py        # appends session summary to decisions.md on stop
+│       ├── setup_openviking.py       # writes ~/.openviking/ovcli.conf idempotently
+│       ├── openviking_session_start.py  # fetches OpenViking profile and injects as context
+│       ├── openviking_recall.py      # searches OpenViking for relevant memories per prompt
+│       └── openviking_capture.py     # sends transcript to OpenViking for memory extraction
 ├── agents/
 │   ├── orchestrator.md          # routes tasks to the right agents, owns workflow state (sonnet)
 │   ├── researcher.md            # read-only exploration, returns compressed summary (haiku)
@@ -187,9 +189,11 @@ Run `/hooks` in Claude Code, or open `.claude/settings.local.json` and confirm t
 |---|---|
 | Context7 or Sequential Thinking MCP never starts | `node` / `npx` not on PATH |
 | Serena MCP never starts | `uv` not on PATH — re-run the uv install and open a new shell |
+| Serena starts but Claude ignores it and uses Read/Grep | Make sure `--context claude-code` is set (not `ide-assistant`). Check with `mcp__serena__get_current_config`. |
 | Session context not printed at session start | Python < 3.10, or `DEVKIT_DISABLE_SESSION_CONTEXT=1` is set |
 | decisions.md not updated after sessions | `DEVKIT_DISABLE_SESSION_CAPTURE=1` is set, or git not available |
-| OpenViking not capturing memories | Check `~/.openviking/` exists; setup_openviking.py needs `openviking_api_key` and `openviking_base_url` set in userConfig |
+| OpenViking MCP not connecting | Check the server is running; default URL is `http://127.0.0.1:1933`. Set `openviking_base_url` in userConfig for a different host. |
+| OpenViking not capturing memories | Check `~/.openviking/ovcli.conf` exists (written by setup_openviking.py on SessionStart). Requires `openviking_base_url` set in userConfig. |
 
 **Note on `.claude/` in `.gitignore`:** The `.claude/` directory is gitignored because `settings.local.json` contains machine-local permission allowlists. This means the first session on a new clone will prompt for permissions that were pre-approved on the original machine — that's expected behavior.
 
@@ -204,6 +208,24 @@ Every hook honors an env var if you want to disable it for one session without u
 - `DEVKIT_DISABLE_AUTOFORMAT=1`
 - `DEVKIT_DISABLE_SESSION_CONTEXT=1`
 - `DEVKIT_DISABLE_SESSION_CAPTURE=1`
+- `DEVKIT_DISABLE_NUDGES=1`
+- `DEVKIT_DISABLE_OPENVIKING=1` — skips session-start inject, per-prompt recall, and Stop capture (MCP stays connected)
+
+**Serena tuning:**
+
+The kit ships Serena in `--context claude-code` mode, which gives Claude a built-in instruction manual (injected via the MCP system prompt) telling it to prefer symbolic tools over Read/Grep. The key tool sequence for code editing: `get_symbols_overview` → `find_symbol(include_body=True)` → `replace_symbol_body` (or `replace_content` for small in-method edits). Always read the symbol body first — skipping that step silently drops decorators.
+
+To check what Serena has available in a session: `mcp__serena__get_current_config`.
+
+To tune language servers per-project, edit `.serena/project.yml`. Change the `languages` list to match your project's stack (Python, TypeScript, Go, etc.). Project memories live in `.serena/memories/` and survive across sessions.
+
+**Optional: serena-hooks** — the Serena maintainers ship a CLI companion (`serena-hooks`) that enforces usage: after 3 consecutive Read/Grep calls on code files, it denies the call and injects a reminder. To enable globally, add to `~/.claude/settings.json`:
+```json
+"hooks": {
+  "PreToolUse": [{ "matcher": "Read|Grep", "hooks": [{ "type": "command", "command": "serena-hooks remind --client=claude-code", "timeout": 5 }] }]
+}
+```
+This is not bundled in the kit because it requires `serena-hooks` on PATH (comes with Serena).
 
 If you find a subagent isn't pulling its weight on a project, delete or rename its `.md` and Claude Code stops routing to it. If you want to add a project-specific subagent, drop a new `.md` in the project's `.claude/agents/` — project-scope agents win over plugin-scope.
 
@@ -213,6 +235,6 @@ If a skill is firing when you don't want it, tighten the `description:` line in 
 
 ## What this kit is *not*
 
-- It's not a memory system. Memory is Option A/B/C above. Pick one.
+- It's not a memory server. It wires OpenViking as the memory layer but doesn't run the server — you run OpenViking separately (local Docker or remote).
 - It's not a project-specific MCP layer. Postgres / Redis / Sentry / Linear / Slack / Stripe MCPs belong in the project's `.mcp.json`, not here, because they're tied to the stack.
 - It's not exhaustive. The agent and skill roster is intentional — most setups fail by adding more, not less. Add more when you've felt the friction the new piece would remove.

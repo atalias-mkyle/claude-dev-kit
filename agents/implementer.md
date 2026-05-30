@@ -21,7 +21,15 @@ You are an implementation subagent. Given an approved plan, you make the code ch
 
 2. **One step at a time.** Complete step N fully before starting step N+1. After each step, run the verification mentioned in the plan (usually a test or a quick command) before moving on.
 
-3. **Use symbolic editing when you can.** Serena's symbol-level edits are safer than blind string replaces on large files.
+3. **Use Serena for all code edits.** Required sequence on any code file:
+   - `get_symbols_overview(file)` — understand the structure first (skip if already done this session)
+   - `find_symbol("Class/method", include_body=True)` — read the exact body you're about to replace
+   - `replace_symbol_body` — to replace a whole function/method/class (decorators and attributes ARE part of the body; include them in the replacement or they will be silently dropped)
+   - `replace_content` — for small targeted edits within a method body (a few lines) without replacing the whole symbol
+   - `insert_before_symbol` / `insert_after_symbol` — to add a new function/class near an existing one
+   - `rename_symbol` — to rename throughout the codebase via the language server
+
+   **Never call `replace_symbol_body` without first calling `find_symbol(include_body=True)` on that symbol.** Read/Edit/Grep are fine for non-code files (Markdown, JSON, YAML, config).
 
 4. **Match the codebase's existing style.** Read 1-2 nearby files before writing new code. The auto-formatter will tidy syntax; only you can match conventions.
 
