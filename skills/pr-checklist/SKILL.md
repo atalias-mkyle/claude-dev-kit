@@ -11,7 +11,11 @@ Run this before you put a PR up for human review. The point is not ceremony — 
 
 Run `git diff <base>` and read every hunk. You'll catch about half of the issues a reviewer would, just by reading them in a different mental mode than you wrote them.
 
-## Step 2 — Mechanical sweep
+## Step 2 — Commit history
+
+Run the `conventional-commits` skill to audit every commit on this branch. Flag any that are vague, wrongly cased, or missing a type prefix. Surface reword suggestions before continuing.
+
+## Step 3 — Mechanical sweep
 
 Run through this list; mark each `pass`, `fail`, or `n/a`:
 
@@ -25,7 +29,7 @@ Run through this list; mark each `pass`, `fail`, or `n/a`:
 - [ ] All files touched have consistent indent/style with the rest of the repo
 - [ ] Filenames and function names match the repo's naming convention
 
-## Step 3 — Behavioral sweep
+## Step 4 — Behavioral sweep
 
 - [ ] Tests cover the new behavior, not just the function existing
 - [ ] Tests cover at least one unhappy path (empty input, error, etc.)
@@ -34,7 +38,7 @@ Run through this list; mark each `pass`, `fail`, or `n/a`:
 - [ ] If anything in the public API changed, callers were updated
 - [ ] If anything DB-related changed, the migration is reversible
 
-## Step 4 — PR description
+## Step 5 — PR description
 
 Draft a description with:
 - **What:** one or two sentences. Pretend the reviewer has never heard of this work.
@@ -43,7 +47,7 @@ Draft a description with:
 - **Testing:** what you ran, what you verified manually.
 - **Risk / rollout:** anything to watch after merging.
 
-## Step 5 — Decide if it's actually ready
+## Step 6 — Decide if it's actually ready
 
 If you'd be embarrassed to point a reviewer at it, it's not ready. The fix is usually small and obvious — do it now, not after the review round-trip.
 
