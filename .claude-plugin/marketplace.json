@@ -11,9 +11,9 @@
   "plugins": [
     {
       "name": "dev-kit",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "source": "./",
-      "description": "Complete Claude agentic dev-kit: 11 specialized subagents, 8 skills, 4 commands, 6 hook scripts, and 6 MCP integrations for the full software development lifecycle.",
+      "description": "Complete Claude agentic dev-kit: 11 specialized subagents, 9 skills, 4 commands, 9 hook scripts, and 6 MCP integrations for the full software development lifecycle.",
       "category": "workflow",
       "tags": ["mcp", "subagents", "hooks", "context7", "serena"],
       "installCount": 0
